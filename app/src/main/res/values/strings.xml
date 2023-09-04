@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name" translatable="false">HorizontalScrolling</string>
+    <string name="item">Item %s</string>
+</resources>
