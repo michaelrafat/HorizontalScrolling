@@ -3,14 +3,16 @@ package com.michael.horizontalscrolling
 import androidx.recyclerview.widget.RecyclerView
 
 abstract class BaseAdapter<T, V : RecyclerView.ViewHolder?>(
-    private var items: List<T>,
+    open val baseItems: MutableList<T>,
     var pageSize: Int? = null
 ) : RecyclerView.Adapter<V>() {
 
-    fun getItems() = items
+    fun getItems() = baseItems
 
-    fun getPagesCount() = items.chunked(pageSize ?: 1).size
+    fun getPagesCount() = baseItems.chunked(pageSize ?: 1).size
 
-    override fun getItemCount() = items.size
+    override fun getItemCount() = baseItems.size
+
+    abstract fun onItemMoved(fromPosition: Int, toPosition: Int)
 
 }

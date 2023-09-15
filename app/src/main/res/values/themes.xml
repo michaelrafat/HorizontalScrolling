@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.HorizontalScrolling" parent="Theme.AppCompat.Light.NoActionBar" />
+    <style name="Theme.HorizontalScrolling" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:statusBarColor">#2196F3</item>
+    </style>
 </resources>

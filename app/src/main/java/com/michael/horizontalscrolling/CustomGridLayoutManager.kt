@@ -4,16 +4,22 @@ import android.annotation.SuppressLint
 import android.view.View
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.ViewGroup.MarginLayoutParams
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.ItemTouchHelper.ACTION_STATE_DRAG
 import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import androidx.recyclerview.widget.RecyclerView.Recycler
+import kotlin.math.ceil
+import kotlin.math.roundToInt
 
 
 class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
     private val columns: Int,
     private val rows: Int,
     private val reverseLayout: Boolean = false,
+    private var isSwipingAsPages: Boolean = true,
+    private var enableDragAndDrop: Boolean = true,
     private val adapter: BaseAdapter<T, D>
 ) : LayoutManager() {
 
@@ -24,6 +30,7 @@ class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
     private val viewHeight by lazy { height / rows }
     private var lastVisibleItem = 0
     private var currentPage = 1
+    private var pagesCount = adapter.getPagesCount()
 
     init {
         adapter.pageSize = rows * columns
@@ -31,10 +38,17 @@ class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
 
     override fun onAttachedToWindow(recyclerview: RecyclerView?) {
         super.onAttachedToWindow(recyclerview)
-        if (reverseLayout) {
-            recyclerview?.rotationY = 180f
+        recyclerview?.let {
+            if (reverseLayout) {
+                it.rotationY = 180f
+            }
+            if (isSwipingAsPages) {
+                detectScrolling(it)
+            }
+            if (enableDragAndDrop) {
+                ItemTouchHelper(setupDragAndDropFeature()).attachToRecyclerView(it)
+            }
         }
-        recyclerview?.let { detectScrolling(it) }
     }
 
     override fun generateDefaultLayoutParams() =
@@ -46,7 +60,9 @@ class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
 
     override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State?) {
         addPagesItems(recycler)
-        lastVisibleItem = getChildAt(getLastColumnIndex())?.let { getDecoratedLeft(it) } ?: 0
+        if (lastVisibleItem == 0) {
+            lastVisibleItem = getChildAt(getLastColumnIndex())?.let { getDecoratedLeft(it) } ?: 0
+        }
     }
 
     private fun addPagesItems(recycler: Recycler) {
@@ -57,7 +73,7 @@ class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
                     val left =
                         (columnIndex * viewWidth - horizontalScrollOffset) + width * pageIndex
                     val right = left + viewWidth
-                    val top = 0
+                    val top = viewHeight * rowIndex
                     val bottom = ((rowIndex + 1) * viewHeight)
                     val position = (pageIndex * rows * columns) + (rowIndex * columns) + columnIndex
                     if (position >= itemCount) {
@@ -65,7 +81,7 @@ class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
                     }
                     val view = recycler.getViewForPosition(position)
                     addView(view)
-                    view.setMargins(10, viewHeight * rowIndex, 10, 10)
+                    view.setMargins(5, 5, 5, 5)
                     if (reverseLayout) {
                         view.rotationY = 180f
                     }
@@ -109,15 +125,33 @@ class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
         val offset: Int
         val startItem = 0
 
-        if (dx + horizontalScrollOffset < startItem) {
-            offset = horizontalScrollOffset
-            horizontalScrollOffset = startItem
-        } else if (dx + horizontalScrollOffset > lastVisibleItem) {
-            offset = lastVisibleItem - horizontalScrollOffset
-            horizontalScrollOffset = lastVisibleItem
-        } else {
-            offset = dx
-            horizontalScrollOffset += dx
+        when (isSwipingAsPages) {
+
+            true -> {
+                if (dx < 0 && currentPage <= 1) {
+                    offset = horizontalScrollOffset
+                    horizontalScrollOffset = startItem
+                } else if (dx > 0 && currentPage >= adapter.getPagesCount()) {
+                    offset = lastVisibleItem - horizontalScrollOffset
+                    horizontalScrollOffset = lastVisibleItem
+                } else {
+                    offset = dx
+                    horizontalScrollOffset += dx
+                }
+            }
+
+            false -> {
+                if (dx + horizontalScrollOffset < startItem) {
+                    offset = horizontalScrollOffset
+                    horizontalScrollOffset = startItem
+                } else if (dx + horizontalScrollOffset > lastVisibleItem) {
+                    offset = lastVisibleItem - horizontalScrollOffset
+                    horizontalScrollOffset = lastVisibleItem
+                } else {
+                    offset = dx
+                    horizontalScrollOffset += dx
+                }
+            }
         }
 
         addPagesItems(recycler)
@@ -157,22 +191,91 @@ class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
             object : OnSwipeTouchHelper(recyclerView.context) {
                 override fun onSwipeLeft() {
                     currentPage++
-                    if (currentPage < adapter.getPagesCount()) {
+                    if (currentPage <= adapter.getPagesCount()) {
                         scrollToPage(currentPage, recyclerView)
                     } else {
-                        currentPage = adapter.getPagesCount() - 2
+                        currentPage = adapter.getPagesCount()
                     }
                 }
 
                 override fun onSwipeRight() {
                     currentPage--
-                    if (currentPage >= 0) {
+                    if (currentPage >= 1) {
                         scrollToPage(currentPage, recyclerView)
                     } else {
-                        currentPage = 0
+                        currentPage = 1
                     }
                 }
             })
+    }
+
+    private fun setupDragAndDropFeature(): ItemTouchHelper.Callback {
+
+        val callback: ItemTouchHelper.Callback = object : ItemTouchHelper.Callback() {
+
+            override fun isLongPressDragEnabled() = true
+
+            override fun isItemViewSwipeEnabled() = true
+
+            override fun getMovementFlags(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder
+            ): Int {
+                val dragFlags =
+                    ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+                val swipeFlags =
+                    ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+                return makeMovementFlags(dragFlags, swipeFlags)
+            }
+
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+
+                val fromPosition = viewHolder.adapterPosition
+                val toPosition = target.adapterPosition
+
+                val currentPageOffset = ceil(
+                    (toPosition + 1) / (rows * columns).toDouble()
+                ).roundToInt()
+
+                if (currentPage != currentPageOffset) {
+                    currentPage = if (currentPageOffset > adapter.getPagesCount()) {
+                        adapter.getPagesCount()
+                    } else {
+                        currentPageOffset
+                    }
+                }
+
+                adapter.onItemMoved(fromPosition, toPosition)
+                return false
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
+
+            override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
+                super.onSelectedChanged(viewHolder, actionState)
+                if (actionState == ACTION_STATE_DRAG) {
+                    viewHolder?.itemView?.alpha = 0.5f
+                }
+            }
+
+            override fun clearView(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder
+            ) {
+                super.clearView(recyclerView, viewHolder)
+                viewHolder.itemView.alpha = 1.0f
+                if (isSwipingAsPages) {
+                    scrollToPage(currentPage, recyclerView)
+                }
+            }
+
+        }
+
+        return callback
     }
 
 }

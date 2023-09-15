@@ -38,12 +38,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        getMyContext(Language.EnglishLTR.language)
 
         /**
          * init recyclerview adapter
          **/
-        itemsAdapter = ItemsAdapter(items = getItems())
+        itemsAdapter = ItemsAdapter(getItems())
 
         /**
          * init custom grid layout manager
@@ -63,10 +62,6 @@ class MainActivity : AppCompatActivity() {
             adapter = itemsAdapter
         }
 
-    }
-
-    private fun scrollToPage(page: Int) {
-        customGridLayoutManager.scrollToPage(recyclerView = binding.rvItems, page = page)
     }
 
     /**
