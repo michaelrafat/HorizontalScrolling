@@ -104,7 +104,7 @@ class MainActivity : AppCompatActivity() {
                 itemsAdapter.baseItems.size,
                 (itemsAdapter.baseItems.size + 1).toString()
             )
-            Toast.makeText(this, "Item Added!", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Item Added!", Toast.LENGTH_SHORT).show()
         }
 
         binding.btnRTL.setOnClickListener {

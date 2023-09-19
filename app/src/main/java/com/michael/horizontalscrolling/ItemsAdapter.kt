@@ -30,7 +30,7 @@ class ItemsAdapter(
 
     override fun onItemAdded(position: Int, item: String) {
         baseItems.add(item)
-        notifyDataSetChanged()
+        notifyItemInserted(position)
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

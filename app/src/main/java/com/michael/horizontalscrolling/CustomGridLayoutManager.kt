@@ -21,7 +21,7 @@ class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
     private val columns: Int,
     private val rows: Int,
     private val reverseLayout: Boolean = false,
-    private var swipeAsPages: Boolean = true,
+    private var swipeAsPages: Boolean = false,
     private var enableDragAndDrop: Boolean = true,
     private val adapter: BaseAdapter<T, D>
 ) : LayoutManager() {
@@ -33,7 +33,6 @@ class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
     private val viewHeight by lazy { height / rows }
     private var lastVisibleItem = 0
     private var currentPage = 1
-    private var totalPages = adapter.getPagesCount()
 
     init {
         adapter.pageSize = rows * columns
@@ -59,32 +58,26 @@ class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
 
     override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State?) {
         addPagesItems(recycler)
-        if (lastVisibleItem == 0) {
-            lastVisibleItem = getChildAt(getLastColumnIndex())?.let { getDecoratedLeft(it) } ?: 0
-        }
+        lastVisibleItem = (adapter.getPagesCount() - 1) * width
     }
 
-    override fun onItemsChanged(recyclerView: RecyclerView) {
-        val current = currentPage
-        currentPage = ceil((itemCount).toDouble() / (adapter.pageSize ?: 1)).roundToInt()
-        if (currentPage > current) {
-            lastVisibleItem += width
+    override fun onItemsAdded(recyclerView: RecyclerView, positionStart: Int, itemCount: Int) {
+        if (swipeAsPages) {
+            currentPage = adapter.getPagesCount()
             scrollToPage(currentPage, recyclerView)
-        } else if (currentPage < current) {
-            lastVisibleItem -= width
         } else {
-            scrollToPage(getLastColumnIndex(), recyclerView)
+            smoothScrollToPosition(recyclerView, RecyclerView.State(), positionStart)
         }
     }
 
     override fun onItemsRemoved(recyclerView: RecyclerView, positionStart: Int, itemCount: Int) {
-        val current = currentPage
-        currentPage = ceil((positionStart).toDouble() / (adapter.pageSize ?: 1)).roundToInt()
-        if (currentPage < current) {
-            lastVisibleItem -= width
+        if (swipeAsPages) {
+            if (currentPage > adapter.getPagesCount()) {
+                currentPage--
+            }
             scrollToPage(currentPage, recyclerView)
         } else {
-            scrollToPage(getLastColumnIndex(), recyclerView)
+            smoothScrollToPosition(recyclerView, RecyclerView.State(), positionStart - 1)
         }
     }
 
@@ -157,45 +150,19 @@ class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
         val offset: Int
         val startItem = 0
 
-        when (swipeAsPages) {
-
-            true -> {
-                if (dx + horizontalScrollOffset < startItem) {
-                    offset = horizontalScrollOffset
-                    horizontalScrollOffset = startItem
-                } else if (dx + horizontalScrollOffset > lastVisibleItem) {
-                    offset = lastVisibleItem - horizontalScrollOffset
-                    horizontalScrollOffset = lastVisibleItem
-                } else {
-                    offset = dx
-                    horizontalScrollOffset += dx
-                }
-            }
-
-            false -> {
-                if (dx + horizontalScrollOffset < startItem) {
-                    offset = horizontalScrollOffset
-                    horizontalScrollOffset = startItem
-                } else if (dx + horizontalScrollOffset > lastVisibleItem) {
-                    offset = lastVisibleItem - horizontalScrollOffset
-                    horizontalScrollOffset = lastVisibleItem
-                } else {
-                    offset = dx
-                    horizontalScrollOffset += dx
-                }
-            }
+        if (dx + horizontalScrollOffset < startItem) {
+            offset = horizontalScrollOffset
+            horizontalScrollOffset = startItem
+        } else if (dx + horizontalScrollOffset > lastVisibleItem) {
+            offset = lastVisibleItem - horizontalScrollOffset
+            horizontalScrollOffset = lastVisibleItem
+        } else {
+            offset = dx
+            horizontalScrollOffset += dx
         }
 
         addPagesItems(recycler)
         return offset
-    }
-
-    private fun getLastColumnIndex(): Int {
-        val lastColumnIndex = (adapter.getPagesCount() - 1) * (rows * columns)
-        if (lastColumnIndex > itemCount - 1) {
-            return itemCount - 1
-        }
-        return lastColumnIndex
     }
 
     override fun smoothScrollToPosition(
@@ -218,13 +185,19 @@ class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
     }
 
     fun nextPage(recyclerView: RecyclerView) {
-        if (currentPage < totalPages) {
+        if (swipeAsPages.not()) {
+            return
+        }
+        if (currentPage < adapter.getPagesCount()) {
             currentPage++
             scrollToPage(currentPage, recyclerView)
         }
     }
 
     fun previousPage(recyclerView: RecyclerView) {
+        if (swipeAsPages.not()) {
+            return
+        }
         if (currentPage > 1) {
             currentPage--
             scrollToPage(currentPage, recyclerView)
@@ -240,8 +213,6 @@ class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
                     if (currentPage < adapter.getPagesCount()) {
                         currentPage++
                         scrollToPage(currentPage, recyclerView)
-                    } else {
-                        currentPage--
                     }
                 }
 
@@ -249,8 +220,6 @@ class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
                     if (currentPage > 1) {
                         currentPage--
                         scrollToPage(currentPage, recyclerView)
-                    } else {
-                        currentPage++
                     }
                 }
             })
@@ -259,7 +228,7 @@ class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
                 // a very slow dx offset on scrolling to be different than the touch listener above (acting as a snap helper)
-                if (currentPage > 1 && currentPage <= adapter.getPagesCount() && dx <= 2 && dx >= -2) {
+                if (currentPage >= 1 && currentPage <= adapter.getPagesCount() && dx <= 2 && dx >= -2) {
                     val offset = horizontalScrollOffset + dx
                     val diff = offset - ((currentPage - 1) * width)
                     if (diff > 0 && diff > width / 2) {
