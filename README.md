@@ -5,7 +5,7 @@
 ![ezgif com-video-to-gif](https://github.com/michaelrafat/HorizontalScrolling/assets/19297298/0052545f-187e-49c4-bd35-58a45a9291c5)
 
 ## Support:
-### - Row and Columns input 
+### - Rows and Columns 
 ### - Scroll as pages
 ### - Smooth Scrolling
 ### - View animation
