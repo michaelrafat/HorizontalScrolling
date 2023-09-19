@@ -21,7 +21,7 @@ class CustomGridLayoutManager<T, D : RecyclerView.ViewHolder?>(
     private val columns: Int,
     private val rows: Int,
     private val reverseLayout: Boolean = false,
-    private var swipeAsPages: Boolean = false,
+    private var swipeAsPages: Boolean = true,
     private var enableDragAndDrop: Boolean = true,
     private val adapter: BaseAdapter<T, D>
 ) : LayoutManager() {
