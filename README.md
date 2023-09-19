@@ -12,3 +12,4 @@
 ### - Custom implementation as SnapHelper
 ### - Reverse layout (RTL and LTR)
 ### - Add and Delete items
+### - Drag and Drop
