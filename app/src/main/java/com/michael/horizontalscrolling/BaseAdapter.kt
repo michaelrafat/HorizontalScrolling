@@ -15,4 +15,6 @@ abstract class BaseAdapter<T, V : RecyclerView.ViewHolder?>(
 
     abstract fun onItemMoved(fromPosition: Int, toPosition: Int)
 
+    abstract fun onItemAdded(position: Int, item: String)
+
 }

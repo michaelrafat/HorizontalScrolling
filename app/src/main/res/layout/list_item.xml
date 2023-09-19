@@ -4,47 +4,63 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_gravity="center"
-    app:cardCornerRadius="10dp"
+    android:animateLayoutChanges="true"
     app:cardBackgroundColor="#2196F3"
-    app:cardElevation="5dp">
+    app:cardCornerRadius="10dp"
+    app:cardElevation="5dp"
+    tools:layout_margin="5dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_gravity="center"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="match_parent">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/ivIcon"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_launcher_foreground"
+            app:layout_constraintBottom_toTopOf="@id/tvItemTitle"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_chainStyle="packed" />
 
         <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/tvItemTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="5dp"
             android:autoSizeMaxTextSize="14sp"
             android:autoSizeMinTextSize="7sp"
             android:autoSizeStepGranularity="1sp"
             android:autoSizeTextType="uniform"
             android:gravity="center"
-            android:maxLines="1"
+            android:lines="2"
+            android:maxLines="2"
+            android:paddingHorizontal="10dp"
             android:textColor="@color/white"
             android:textDirection="locale"
             android:textSize="14sp"
             android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@id/ivDelete"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/ivIcon"
+            app:layout_constraintVertical_chainStyle="packed"
             tools:text="Item 1" />
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/ivDelete"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:tint="@color/white"
-            android:layout_margin="5dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:padding="10dp"
             android:src="@android:drawable/ic_delete"
+            android:tint="@android:color/holo_red_dark"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvItemTitle" />
+            app:layout_constraintTop_toBottomOf="@id/tvItemTitle"
+            app:layout_constraintVertical_chainStyle="packed" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

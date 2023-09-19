@@ -28,6 +28,11 @@ class ItemsAdapter(
         notifyItemMoved(fromPosition, toPosition)
     }
 
+    override fun onItemAdded(position: Int, item: String) {
+        baseItems.add(item)
+        notifyDataSetChanged()
+    }
+
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         private val tvItemTitle = itemView.findViewById<AppCompatTextView>(R.id.tvItemTitle)

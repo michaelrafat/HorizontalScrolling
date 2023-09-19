@@ -11,14 +11,18 @@ import java.lang.Math.abs
 
 open class OnSwipeTouchHelper(context: Context?) : OnTouchListener {
 
-    private val gestureDetector: GestureDetector
+    private var gestureDetector: GestureDetector? = null
 
     init {
         gestureDetector = GestureDetector(context, GestureListener())
     }
 
     override fun onTouch(view: View, motionEvent: MotionEvent): Boolean {
-        return gestureDetector.onTouchEvent(motionEvent)
+        return try {
+            gestureDetector?.onTouchEvent(motionEvent) == true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     private inner class GestureListener : SimpleOnGestureListener() {
